@@ -38,3 +38,17 @@ export const MODEL_MAX_TOKENS = {
     [OPENROUTER_MODELS.OPEN_AI_GPT_5_MINI]: 400000,
     [OPENROUTER_MODELS.OPEN_AI_GPT_5]: 400000,
 } as const;
+
+/**
+ * Fallback output-token cap for models that are not part of the built-in catalog
+ * (e.g. any model name provided through `CUSTOM_AI_MODEL_NAME`).
+ */
+export const DEFAULT_MODEL_MAX_TOKENS = 200000;
+
+/**
+ * Returns the maximum output tokens for a model. Unknown/custom model names
+ * fall back to {@link DEFAULT_MODEL_MAX_TOKENS}.
+ */
+export function getModelMaxTokens(model: string): number {
+    return MODEL_MAX_TOKENS[model as OPENROUTER_MODELS] ?? DEFAULT_MODEL_MAX_TOKENS;
+}

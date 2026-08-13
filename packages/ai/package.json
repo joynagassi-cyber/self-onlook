@@ -33,6 +33,8 @@
         "typescript": "^5.5.4"
     },
     "dependencies": {
+        "@ai-sdk/anthropic": "^2.0.95",
+        "@ai-sdk/openai": "^2.0.118",
         "@mendable/firecrawl-js": "^1.29.1",
         "@openrouter/ai-sdk-provider": "^1.2.0",
         "ai": "5.0.60",
