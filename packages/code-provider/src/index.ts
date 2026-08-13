@@ -1,9 +1,11 @@
+import type { CodesandboxProviderOptions } from './providers/codesandbox';
+import type { NodeFsProvider, NodeFsProviderOptions } from './providers/nodefs';
 import { CodeProvider } from './providers';
-import { CodesandboxProvider, type CodesandboxProviderOptions } from './providers/codesandbox';
-import { NodeFsProvider, type NodeFsProviderOptions } from './providers/nodefs';
+import { CodesandboxProvider } from './providers/codesandbox';
+
 export * from './providers';
 export { CodesandboxProvider } from './providers/codesandbox';
-export { NodeFsProvider } from './providers/nodefs';
+export type { NodeFsProviderOptions } from './providers/nodefs';
 export * from './types';
 
 export interface CreateClientOptions {
@@ -31,7 +33,9 @@ export async function getStaticCodeProvider(
     }
 
     if (codeProvider === CodeProvider.NodeFs) {
-        return NodeFsProvider;
+        throw new Error(
+            'NodeFsProvider is Node-only and is not exported from the package root. Import it from "@onlook/code-provider/providers/nodefs".',
+        );
     }
     throw new Error(`Unimplemented code provider: ${codeProvider}`);
 }
@@ -50,10 +54,9 @@ function newProviderInstance(codeProvider: CodeProvider, providerOptions: Provid
     }
 
     if (codeProvider === CodeProvider.NodeFs) {
-        if (!providerOptions.nodefs) {
-            throw new Error('NodeFs provider options are required.');
-        }
-        return new NodeFsProvider(providerOptions.nodefs);
+        throw new Error(
+            'NodeFsProvider is Node-only and cannot be created from the package root (it would pull Node builtins into the browser bundle). Construct it directly from "@onlook/code-provider/providers/nodefs".',
+        );
     }
 
     throw new Error(`Unimplemented code provider: ${codeProvider}`);
