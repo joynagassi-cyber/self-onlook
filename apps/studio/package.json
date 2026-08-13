@@ -1,0 +1,70 @@
+{
+    "name": "@onlook/studio",
+    "description": "Onlook Desktop — local desktop shell for the Onlook visual editor",
+    "version": "1.1.0",
+    "private": true,
+    "main": "dist-electron/main.js",
+    "license": "Apache-2.0",
+    "author": {
+        "name": "Onlook",
+        "email": "contact@onlook.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/onlook-dev/onlook.git"
+    },
+    "scripts": {
+        "dev": "bun ./scripts/dev.mjs",
+        "lint": "eslint . --max-warnings 0",
+        "format": "eslint --fix .",
+        "typecheck": "tsc --noEmit",
+        "build:web": "SKIP_ENV_VALIDATION=1 bun --filter @onlook/web-client build:standalone",
+        "build:electron": "bun build electron/main.ts electron/preload.ts --target=node --external:electron --format=cjs --outdir=dist-electron && electron-builder --publish never",
+        "build": "bun run build:web && bun run build:electron",
+        "package": "bun run build",
+        "package:dir": "bun run build:web && bun build electron/main.ts electron/preload.ts --target=node --external:electron --format=cjs --outdir=dist-electron && electron-builder --dir --publish never"
+    },
+    "devDependencies": {
+        "@onlook/code-provider": "*",
+        "@onlook/eslint": "*",
+        "@onlook/typescript": "*",
+        "electron": "37.10.3",
+        "electron-builder": "^26.0.12",
+        "eslint": "^9.0.0",
+        "typescript": "^5.5.4"
+    },
+    "build": {
+        "appId": "com.onlook.desktop",
+        "productName": "Onlook",
+        "directories": {
+            "output": "dist"
+        },
+        "files": [
+            "dist-electron/**/*",
+            "package.json"
+        ],
+        "extraResources": [
+            {
+                "from": "../web/client/.next/standalone/apps/web/client",
+                "to": "app"
+            }
+        ],
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ],
+            "artifactName": "Onlook-${version}-${arch}.${ext}"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true
+        }
+    }
+}
