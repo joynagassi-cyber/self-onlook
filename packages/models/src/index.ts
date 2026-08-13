@@ -14,6 +14,7 @@ export * from './llm/';
 export * from './next/';
 export * from './pages/';
 export * from './project/';
+export * from './repository/';
 export * from './run/';
 export * from './sandbox/';
 export * from './style/';
