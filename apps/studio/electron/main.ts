@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import type { ChildProcess } from 'node:child_process';
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell, type OpenDialogOptions } from 'electron';
 
 import { NodeFsProvider } from '@onlook/code-provider/providers/nodefs';
 
@@ -197,7 +197,7 @@ function registerIpc(): void {
 
     ipcMain.handle(IPC.selectProjectDir, () =>
         safe(async (): Promise<string | null> => {
-            const options = {
+            const options: OpenDialogOptions = {
                 title: 'Select a project folder',
                 properties: ['openDirectory', 'createDirectory'],
             };
