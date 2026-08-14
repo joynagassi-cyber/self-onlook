@@ -4,6 +4,7 @@ export * from './auth/';
 export * from './chat/';
 export * from './code/';
 export * from './create/';
+export * from './desktop/';
 export * from './domain/';
 export * from './editor/';
 export * from './element/';
