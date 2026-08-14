@@ -24,6 +24,7 @@
       "devDependencies": {
         "@onlook/code-provider": "*",
         "@onlook/eslint": "*",
+        "@onlook/models": "*",
         "@onlook/typescript": "*",
         "electron": "37.10.3",
         "electron-builder": "^26.0.12",

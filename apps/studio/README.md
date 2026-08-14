@@ -45,6 +45,25 @@ the project root; escaping paths are rejected).
 
 All methods return `{ ok: true, value } | { ok: false, error }`.
 
+## Local project store API (`window.onlook.projects`)
+
+Backed by `LocalProjectRepository` (`src/repositories/`) — a JSON-file
+implementation of the shared `ProjectRepository` contract
+(`@onlook/models/repository`). Projects are stored as one JSON file each
+under `userData/local-projects`, with an `index.json` tracking the list.
+
+- `projectsList(options?)` — list local projects (sorted by last updated)
+- `projectsGet(projectId)` — single project
+- `projectsGetWithCanvas(projectId)` — project + default canvas + frames
+- `projectsCreate({ name, description?, tags?, sandboxId?, sandboxUrl?, ... })`
+- `projectsUpdate(projectId, patch)` — rename / description / tags / preview
+- `projectsDelete(projectId)`
+- `projectsAddTag(projectId, tag)` / `projectsRemoveTag(projectId, tag)`
+
+The store is single-user: the main process acts as the local user
+(`desktop-local-user`); the renderer never picks an identity. Sandbox fields
+are optional — local projects work fully offline.
+
 ## Environment
 
 Pass through the same variables the web app needs. Cloud features (auth,

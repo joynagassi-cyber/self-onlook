@@ -17,6 +17,7 @@
         "dev": "bun ./scripts/dev.mjs",
         "lint": "eslint . --max-warnings 0",
         "format": "eslint --fix .",
+        "test": "bun test",
         "typecheck": "tsc --noEmit",
         "build:web": "SKIP_ENV_VALIDATION=1 bun --filter @onlook/web-client build:standalone",
         "build:electron": "bun build electron/main.ts electron/preload.ts --target=node --external:electron --format=cjs --outdir=dist-electron && electron-builder --publish never",
@@ -27,6 +28,7 @@
     "devDependencies": {
         "@onlook/code-provider": "*",
         "@onlook/eslint": "*",
+        "@onlook/models": "*",
         "@onlook/typescript": "*",
         "electron": "37.10.3",
         "electron-builder": "^26.0.12",

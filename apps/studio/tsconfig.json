@@ -4,5 +4,5 @@
         "baseUrl": ".",
         "types": ["node"]
     },
-    "include": ["electron", "scripts"]
+    "include": ["electron", "scripts", "src", "test"]
 }

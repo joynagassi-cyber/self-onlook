@@ -9,13 +9,17 @@ import { NodeFsProvider } from '@onlook/code-provider/providers/nodefs';
 
 import type {
     AppInfo,
+    CreateProjectInput,
     FsDeleteRequest,
     FsListRequest,
     FsReadRequest,
     FsResult,
     FsStatRequest,
     FsWriteRequest,
+    ProjectListOptions,
+    UpdateProjectInput,
 } from './shared';
+import { LocalProjectRepository } from '../src/repositories';
 import { IPC } from './shared';
 
 /**
@@ -34,11 +38,15 @@ const DEV_URL = process.env.ONLOOK_DEV_URL ?? 'http://127.0.0.1:3000';
 const PORT_START = 3210;
 const PORT_END = 3410;
 
+/** Identity used for the local project store (single-user desktop). */
+const LOCAL_USER_ID = 'desktop-local-user';
+
 let mainWindow: BrowserWindow | null = null;
 let webServer: ChildProcess | null = null;
 let fsProvider: NodeFsProvider | null = null;
 let fsRootDir: string | null = null;
 let appUrl: string | null = null;
+let projectRepository: LocalProjectRepository | null = null;
 
 function safe<T>(operation: () => Promise<T>): Promise<FsResult<T>> {
     return operation().then(
@@ -271,6 +279,50 @@ function registerIpc(): void {
             return true;
         }),
     );
+
+    ipcMain.handle(IPC.projectsList, (_event, options?: ProjectListOptions) =>
+        safe(async () => requireProjectRepository().listByUser(LOCAL_USER_ID, options)),
+    );
+
+    ipcMain.handle(IPC.projectsGet, (_event, projectId: string) =>
+        safe(async () => requireProjectRepository().get(LOCAL_USER_ID, projectId)),
+    );
+
+    ipcMain.handle(IPC.projectsGetWithCanvas, (_event, projectId: string) =>
+        safe(async () => requireProjectRepository().getProjectWithCanvas(LOCAL_USER_ID, projectId)),
+    );
+
+    ipcMain.handle(IPC.projectsCreate, (_event, input: CreateProjectInput) =>
+        safe(async () =>
+            requireProjectRepository().create({
+                ...input,
+                // The renderer never picks the identity — local projects all
+                // belong to the desktop's single local user.
+                userId: LOCAL_USER_ID,
+            }),
+        ),
+    );
+
+    ipcMain.handle(IPC.projectsUpdate, (_event, projectId: string, input: UpdateProjectInput) =>
+        safe(async () =>
+            requireProjectRepository().update(LOCAL_USER_ID, { ...input, id: projectId }),
+        ),
+    );
+
+    ipcMain.handle(IPC.projectsDelete, (_event, projectId: string) =>
+        safe(async (): Promise<boolean> => {
+            await requireProjectRepository().delete(LOCAL_USER_ID, projectId);
+            return true;
+        }),
+    );
+
+    ipcMain.handle(IPC.projectsAddTag, (_event, projectId: string, tag: string) =>
+        safe(async () => requireProjectRepository().addTag(LOCAL_USER_ID, projectId, tag)),
+    );
+
+    ipcMain.handle(IPC.projectsRemoveTag, (_event, projectId: string, tag: string) =>
+        safe(async () => requireProjectRepository().removeTag(LOCAL_USER_ID, projectId, tag)),
+    );
 }
 
 function requireFsProvider(): NodeFsProvider {
@@ -278,6 +330,13 @@ function requireFsProvider(): NodeFsProvider {
         throw new Error('Filesystem provider is not initialized');
     }
     return fsProvider;
+}
+
+function requireProjectRepository(): LocalProjectRepository {
+    if (!projectRepository) {
+        throw new Error('Local project store is not initialized');
+    }
+    return projectRepository;
 }
 
 async function createFsProvider(rootDir: string): Promise<NodeFsProvider> {
@@ -289,6 +348,11 @@ async function createFsProvider(rootDir: string): Promise<NodeFsProvider> {
 async function bootstrap(): Promise<void> {
     fsRootDir = path.join(app.getPath('userData'), 'projects');
     fsProvider = await createFsProvider(fsRootDir);
+    // Local project metadata lives in its own directory so the JSON store
+    // never mixes with the user's project files.
+    projectRepository = new LocalProjectRepository(
+        path.join(app.getPath('userData'), 'local-projects'),
+    );
     registerIpc();
 
     if (app.isPackaged) {
