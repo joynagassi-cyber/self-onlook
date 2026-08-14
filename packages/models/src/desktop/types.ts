@@ -77,6 +77,13 @@ export interface FsDeleteRequest {
 export type FsResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
 /**
+ * Create input for the local store. `userId` is intentionally absent: the
+ * main process always acts as the desktop's single local user, so the
+ * renderer never picks an identity.
+ */
+export type CreateLocalProjectInput = Omit<CreateProjectInput, 'userId'>;
+
+/**
  * The desktop API surface exposed to the renderer as `window.onlook` by the
  * preload bridge. Domain types come from the shared project model, so the
  * web app can consume the desktop runtime without importing Electron code.
@@ -99,7 +106,7 @@ export interface OnlookDesktopApi {
     projectsList(options?: ProjectListOptions): Promise<FsResult<Project[]>>;
     projectsGet(projectId: string): Promise<FsResult<Project | null>>;
     projectsGetWithCanvas(projectId: string): Promise<FsResult<ProjectWithCanvas | null>>;
-    projectsCreate(input: CreateProjectInput): Promise<FsResult<Project>>;
+    projectsCreate(input: CreateLocalProjectInput): Promise<FsResult<Project>>;
     projectsUpdate(projectId: string, input: UpdateProjectInput): Promise<FsResult<Project>>;
     projectsDelete(projectId: string): Promise<FsResult<boolean>>;
     projectsAddTag(projectId: string, tag: string): Promise<FsResult<ProjectTagResult>>;

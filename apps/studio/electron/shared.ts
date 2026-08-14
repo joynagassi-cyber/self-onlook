@@ -12,6 +12,7 @@
 export {
     IPC,
     type AppInfo,
+    type CreateLocalProjectInput,
     type CreateProjectInput,
     type FsDeleteRequest,
     type FsListEntry,

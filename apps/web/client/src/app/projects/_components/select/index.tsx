@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Carousel } from '../carousel';
 import localforage from 'localforage';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'sonner';
@@ -11,9 +10,11 @@ import { STORAGE_BUCKETS, Tags } from '@onlook/constants';
 import { Button } from '@onlook/ui/button';
 import { Icons } from '@onlook/ui/icons';
 
-import { api } from '@/trpc/react';
 import { useCreateBlankProject } from '@/hooks/use-create-blank-project';
+import { useProjects } from '@/hooks/use-projects';
+import { api } from '@/trpc/react';
 import { getFileUrlFromStorage } from '@/utils/supabase/client';
+import { Carousel } from '../carousel';
 import { Templates } from '../templates';
 import { TemplateModal } from '../templates/template-modal';
 import { HighlightText } from './highlight-text';
@@ -27,7 +28,7 @@ export const SelectProject = ({ externalSearchQuery }: { externalSearchQuery?: s
     // Hooks
     const utils = api.useUtils();
     const { data: user } = api.user.get.useQuery();
-    const { data: fetchedProjects, isLoading, refetch } = api.project.list.useQuery();
+    const { data: fetchedProjects, isLoading, refetch } = useProjects();
     const { mutateAsync: removeTag } = api.project.removeTag.useMutation();
     const { handleStartBlankProject, isCreatingProject } = useCreateBlankProject();
 
@@ -301,7 +302,7 @@ export const SelectProject = ({ externalSearchQuery }: { externalSearchQuery?: s
                                         <button
                                             onClick={handleStartBlankProject}
                                             disabled={isCreatingProject}
-                                            className="border-border bg-secondary/40 hover:bg-secondary relative flex aspect-[4/2.8] w-full items-center justify-center rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="border-border bg-secondary/40 hover:bg-secondary relative flex aspect-[4/2.8] w-full items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                             <div className="text-foreground-tertiary flex flex-col items-center justify-center">
                                                 {isCreatingProject ? (
@@ -343,7 +344,7 @@ export const SelectProject = ({ externalSearchQuery }: { externalSearchQuery?: s
                                                 HighlightText={HighlightText}
                                             />
                                         </motion.div>
-                                    ))
+                                    )),
                                 ]
                             )}
                         </AnimatePresence>

@@ -9,6 +9,7 @@ import { NodeFsProvider } from '@onlook/code-provider/providers/nodefs';
 
 import type {
     AppInfo,
+    CreateLocalProjectInput,
     CreateProjectInput,
     FsDeleteRequest,
     FsListRequest,
@@ -292,7 +293,7 @@ function registerIpc(): void {
         safe(async () => requireProjectRepository().getProjectWithCanvas(LOCAL_USER_ID, projectId)),
     );
 
-    ipcMain.handle(IPC.projectsCreate, (_event, input: CreateProjectInput) =>
+    ipcMain.handle(IPC.projectsCreate, (_event, input: CreateLocalProjectInput) =>
         safe(async () =>
             requireProjectRepository().create({
                 ...input,
