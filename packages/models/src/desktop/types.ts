@@ -84,6 +84,11 @@ export interface AiConfig {
     apiKey?: string;
     /** Model name sent verbatim to the provider (e.g. `deepseek-chat`, `llama3`). */
     modelName?: string;
+    /**
+     * "My models" — the list of models the user picked from the provider's
+     * catalog (loaded through the API). The active one is `modelName`.
+     */
+    models?: string[];
     /** True when a config file exists on disk (has been saved at least once). */
     exists?: boolean;
 }

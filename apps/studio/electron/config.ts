@@ -31,6 +31,11 @@ export function readAiConfig(filePath: string = resolveAiConfigPath()): AiConfig
         if (typeof parsed.modelName === 'string' && parsed.modelName) {
             config.modelName = parsed.modelName;
         }
+        if (Array.isArray(parsed.models)) {
+            config.models = parsed.models.filter(
+                (model): model is string => typeof model === 'string' && model.length > 0,
+            );
+        }
         return config;
     } catch {
         return { exists: false };
@@ -48,6 +53,12 @@ export function writeAiConfig(input: AiConfigInput, filePath: string = resolveAi
     }
     if (input.modelName?.trim()) {
         config.modelName = input.modelName.trim();
+    }
+    if (Array.isArray(input.models)) {
+        const seen = new Set<string>();
+        config.models = input.models
+            .map((model) => model.trim())
+            .filter((model) => model.length > 0 && !seen.has(model) && seen.add(model));
     }
 
     mkdirSync(path.dirname(filePath), { recursive: true });

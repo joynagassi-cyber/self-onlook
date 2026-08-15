@@ -1,5 +1,6 @@
 import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
 import {
+    aiRouter,
     chatRouter,
     domainRouter,
     frameRouter,
@@ -24,6 +25,7 @@ import { branchRouter } from './routers/project/branch';
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
+    ai: aiRouter,
     sandbox: sandboxRouter,
     user: userRouter,
     invitation: invitationRouter,

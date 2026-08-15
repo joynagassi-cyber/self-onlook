@@ -43,19 +43,29 @@ export function initModel({
     model: requestedModel,
 }: InitialModelPayload): ModelConfig {
     const customConfig = getCustomAIConfig();
+
+    // A custom endpoint means the whole model stack (chat, edit, suggestions,
+    // titles, ...) runs through that provider. The selected model name is sent
+    // verbatim to the endpoint.
     if (customConfig.baseURL) {
         const customModelName = customConfig.modelName ?? requestedModel;
         return getCustomProvider(customConfig.baseURL, customConfig, customModelName);
     }
 
+    // The user's selected model (Settings → AI & Models) personalizes the
+    // default OpenRouter flow too: it overrides the per-chat-type default
+    // (gpt-5 / claude-sonnet-4.5 / gpt-5-nano) everywhere, while leaving the
+    // behavior untouched when nothing is configured.
+    const effectiveModel = customConfig.modelName ?? requestedModel;
+
     let model: LanguageModel;
     let providerOptions: Record<string, any> | undefined;
     let headers: Record<string, string> | undefined;
-    let maxOutputTokens: number = getModelMaxTokens(requestedModel);
+    let maxOutputTokens: number = getModelMaxTokens(effectiveModel);
 
     switch (requestedProvider) {
         case LLMProvider.OPENROUTER:
-            model = getOpenRouterProvider(requestedModel);
+            model = getOpenRouterProvider(effectiveModel);
             headers = {
                 'HTTP-Referer': 'https://onlook.com',
                 'X-Title': 'Onlook',
@@ -64,8 +74,8 @@ export function initModel({
                 openrouter: { transforms: ['middle-out'] },
             };
             const isAnthropic =
-                requestedModel === OPENROUTER_MODELS.CLAUDE_4_5_SONNET ||
-                requestedModel === OPENROUTER_MODELS.CLAUDE_3_5_HAIKU;
+                effectiveModel === OPENROUTER_MODELS.CLAUDE_4_5_SONNET ||
+                effectiveModel === OPENROUTER_MODELS.CLAUDE_3_5_HAIKU;
             providerOptions = isAnthropic
                 ? { ...providerOptions, anthropic: { cacheControl: { type: 'ephemeral' } } }
                 : providerOptions;
@@ -109,10 +119,10 @@ function getCustomProvider(
     };
 }
 
-function getOpenRouterProvider(model: OPENROUTER_MODELS): LanguageModel {
+function getOpenRouterProvider(model: string): LanguageModel {
     if (!process.env.OPENROUTER_API_KEY) {
         throw new Error('OPENROUTER_API_KEY must be set');
     }
     const openrouter = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY });
-    return openrouter(model);
+    return openrouter(model as never);
 }

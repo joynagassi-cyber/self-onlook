@@ -1,5 +1,6 @@
 'use client';
 
+import { api } from '@/trpc/react';
 import { useEffect, useState } from 'react';
 import { getDesktopApi, OPENROUTER_MODELS } from '@onlook/models';
 import type { AiConfig, AiConfigInput } from '@onlook/models';
@@ -45,11 +46,15 @@ function modeFromConfig(config: AiConfig): ProviderMode {
 
 export const AiSettingsTab = () => {
     const desktopApi = getDesktopApi();
+    const listModels = api.ai.listModels.useMutation();
 
     const [mode, setMode] = useState<ProviderMode>('openrouter');
     const [baseURL, setBaseURL] = useState('');
     const [apiKey, setApiKey] = useState('');
     const [modelName, setModelName] = useState('');
+    const [myModels, setMyModels] = useState<string[]>([]);
+    const [catalog, setCatalog] = useState<string[]>([]);
+    const [catalogError, setCatalogError] = useState<string | null>(null);
     const [configPath, setConfigPath] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -73,6 +78,7 @@ export const AiSettingsTab = () => {
                     setBaseURL(config.baseURL ?? '');
                     setApiKey(config.apiKey ?? '');
                     setModelName(config.modelName ?? '');
+                    setMyModels(config.models ?? []);
                 }
                 if (pathResult.ok) {
                     setConfigPath(pathResult.value);
@@ -94,6 +100,36 @@ export const AiSettingsTab = () => {
         };
     }, [desktopApi]);
 
+    const loadModels = async () => {
+        if (!baseURL.trim()) {
+            setCatalogError('Enter a base URL first.');
+            return;
+        }
+        setCatalogError(null);
+        try {
+            const result = await listModels.mutateAsync({
+                baseURL: baseURL.trim(),
+                apiKey: apiKey.trim() || undefined,
+                style: mode === 'anthropic' ? 'anthropic' : 'openai',
+            });
+            setCatalog(result.models);
+        } catch (err) {
+            setCatalogError(err instanceof Error ? err.message : 'Could not load the model catalog.');
+        }
+    };
+
+    const addModel = (name: string) => {
+        setMyModels((prev) => (prev.includes(name) ? prev : [...prev, name]));
+        setModelName(name);
+    };
+
+    const removeModel = (name: string) => {
+        setMyModels((prev) => prev.filter((model) => model !== name));
+        if (modelName === name) {
+            setModelName('');
+        }
+    };
+
     const save = async () => {
         if (!desktopApi) {
             return;
@@ -106,6 +142,7 @@ export const AiSettingsTab = () => {
             baseURL: useCustomEndpoint ? baseURL : '',
             apiKey: useCustomEndpoint ? apiKey : '',
             modelName,
+            models: myModels,
         };
         const result = await desktopApi.aiConfigSet(input);
         setSaving(false);
@@ -148,7 +185,12 @@ export const AiSettingsTab = () => {
                         ),
                     )}
                 </div>
-                <ModelCatalog />
+                <ModelCatalog
+                    models={BUILT_IN_MODELS}
+                    myModels={[]}
+                    onAdd={() => undefined}
+                    interactive={false}
+                />
             </div>
         );
     }
@@ -158,8 +200,9 @@ export const AiSettingsTab = () => {
             <div>
                 <h2 className="text-largePlus">AI &amp; Models</h2>
                 <p className="mt-1 text-small text-muted-foreground">
-                    Choose your provider and model. Saved to the local config file and applied to
-                    the next chat message — no restart needed.
+                    Pick your provider, load its models through the API, then choose the model used
+                    across the whole app (chat, edits, suggestions). Saved to the local config
+                    file — no restart needed.
                 </p>
             </div>
 
@@ -216,25 +259,52 @@ export const AiSettingsTab = () => {
                                 onChange={(e) => setApiKey(e.target.value)}
                             />
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="ai-model-name">Model name</Label>
-                            <Input
-                                id="ai-model-name"
-                                placeholder="deepseek-chat, llama3, qwen2.5-coder…"
-                                value={modelName}
-                                onChange={(e) => setModelName(e.target.value)}
-                            />
-                            <p className="text-micro text-muted-foreground">
-                                Sent verbatim to the provider — any model identifier works.
-                            </p>
+                        <div className="flex items-end gap-2">
+                            <div className="flex flex-1 flex-col gap-2">
+                                <Label htmlFor="ai-model-name">Active model</Label>
+                                <Input
+                                    id="ai-model-name"
+                                    placeholder="deepseek-chat, llama3, qwen2.5-coder…"
+                                    value={modelName}
+                                    onChange={(e) => setModelName(e.target.value)}
+                                />
+                            </div>
+                            <Button
+                                variant="outline"
+                                onClick={() => void loadModels()}
+                                disabled={listModels.isPending}
+                            >
+                                {listModels.isPending ? (
+                                    <Icons.LoadingSpinner className="mr-1.5 h-4 w-4" />
+                                ) : (
+                                    <Icons.Reload className="mr-1.5 h-4 w-4" />
+                                )}
+                                Load models from API
+                            </Button>
                         </div>
                     </div>
+
+                    {catalogError && (
+                        <p className="flex items-center gap-1 text-small text-destructive">
+                            <Icons.CrossCircled className="h-4 w-4" />
+                            {catalogError}
+                        </p>
+                    )}
+
+                    {catalog.length > 0 && (
+                        <ModelCatalog
+                            models={catalog}
+                            myModels={myModels}
+                            onAdd={addModel}
+                            interactive
+                        />
+                    )}
                 </>
             )}
 
             {mode === 'openrouter' && (
                 <div className="flex flex-col gap-2">
-                    <Label htmlFor="ai-model-name">Default model name (optional)</Label>
+                    <Label htmlFor="ai-model-name">Active model (optional)</Label>
                     <Input
                         id="ai-model-name"
                         placeholder="e.g. anthropic/claude-sonnet-4.5"
@@ -242,16 +312,72 @@ export const AiSettingsTab = () => {
                         onChange={(e) => setModelName(e.target.value)}
                     />
                     <p className="text-micro text-muted-foreground">
-                        Only used when a custom endpoint is configured; OpenRouter uses the
-                        built-in catalog otherwise.
+                        Overrides the built-in per-feature defaults across the whole app. Leave
+                        empty to keep the automatic defaults.
                     </p>
                 </div>
             )}
 
             <Separator />
 
+            {/* My models */}
+            <div className="flex flex-col gap-2">
+                <Label className="text-regularPlus">
+                    My models ({myModels.length})
+                </Label>
+                {myModels.length === 0 ? (
+                    <p className="text-small text-muted-foreground">
+                        No saved models yet. Click a model from a catalog below (or type one above)
+                        to add it here, then click it to make it the active model.
+                    </p>
+                ) : (
+                    <div className="flex flex-col gap-1.5">
+                        {myModels.map((model) => {
+                            const active = model === modelName;
+                            return (
+                                <div
+                                    key={model}
+                                    className={cn(
+                                        'group flex items-center justify-between gap-2 rounded-md border px-3 py-2 transition-colors',
+                                        active
+                                            ? 'border-active bg-background-secondary'
+                                            : 'border hover:bg-background-hover',
+                                    )}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => setModelName(model)}
+                                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                                        title={
+                                            active
+                                                ? 'Active model'
+                                                : 'Use this model across the whole app'
+                                        }
+                                    >
+                                        {active && (
+                                            <Icons.CheckCircled className="h-4 w-4 shrink-0 text-foreground-positive" />
+                                        )}
+                                        <span className="truncate font-mono text-small">{model}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeModel(model)}
+                                        className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                                        title="Remove from my models"
+                                    >
+                                        <Icons.CrossS className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            <Separator />
+
             <div className="flex items-center gap-3">
-                <Button onClick={save} disabled={saving}>
+                <Button onClick={() => void save()} disabled={saving}>
                     {saving ? 'Saving…' : 'Save configuration'}
                 </Button>
                 {status === 'saved' && (
@@ -274,23 +400,55 @@ export const AiSettingsTab = () => {
                 </p>
             )}
 
-            <ModelCatalog />
+            <ModelCatalog
+                models={BUILT_IN_MODELS}
+                myModels={myModels}
+                onAdd={addModel}
+                interactive
+            />
         </div>
     );
 };
 
-const ModelCatalog = () => (
+const ModelCatalog = ({
+    models,
+    myModels,
+    onAdd,
+    interactive,
+}: {
+    models: string[];
+    myModels: string[];
+    onAdd: (model: string) => void;
+    interactive: boolean;
+}) => (
     <div className="flex flex-col gap-2">
-        <p className="text-smallPlus text-muted-foreground">Built-in OpenRouter catalog</p>
+        <p className="text-smallPlus text-muted-foreground">
+            {interactive ? 'Click a model to add it to My models' : 'Built-in OpenRouter catalog'}
+        </p>
         <div className="flex flex-wrap gap-1.5">
-            {BUILT_IN_MODELS.map((model) => (
-                <span
-                    key={model}
-                    className="rounded-full border px-2.5 py-1 text-micro font-mono text-muted-foreground"
-                >
-                    {model}
-                </span>
-            ))}
+            {models.map((model) => {
+                const added = myModels.includes(model);
+                return (
+                    <button
+                        key={model}
+                        type="button"
+                        disabled={!interactive || added}
+                        onClick={() => onAdd(model)}
+                        className={cn(
+                            'rounded-full border px-2.5 py-1 font-mono text-micro transition-colors',
+                            interactive && !added
+                                ? 'text-muted-foreground hover:border-active hover:text-foreground'
+                                : 'border-active text-foreground',
+                            interactive && !added && 'cursor-pointer',
+                            !interactive && 'cursor-default',
+                        )}
+                        title={added ? 'Already in My models' : 'Add to My models'}
+                    >
+                        {added && <Icons.Check className="mr-1 inline h-3 w-3" />}
+                        {model}
+                    </button>
+                );
+            })}
         </div>
     </div>
 );
