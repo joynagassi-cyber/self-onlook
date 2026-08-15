@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 import type {
+    AiConfig,
+    AiConfigInput,
     AppInfo,
     CreateProjectInput,
     FsDeleteRequest,
@@ -66,6 +68,11 @@ const api: OnlookDesktopApi = {
         ipcRenderer.invoke(IPC.projectsRemoveTag, projectId, tag) as Promise<
             FsResult<ProjectTagResult>
         >,
+
+    aiConfigGet: () => ipcRenderer.invoke(IPC.aiConfigGet) as Promise<FsResult<AiConfig>>,
+    aiConfigSet: (config: AiConfigInput) =>
+        ipcRenderer.invoke(IPC.aiConfigSet, config) as Promise<FsResult<AiConfig>>,
+    aiConfigPath: () => ipcRenderer.invoke(IPC.aiConfigPath) as Promise<FsResult<string>>,
 };
 
 contextBridge.exposeInMainWorld('onlook', api);

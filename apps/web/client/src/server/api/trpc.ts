@@ -7,6 +7,7 @@
  * need to use are documented accordingly near the end.
  */
 
+import { loadLocalAiConfig } from '@/server/ai-config';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { createClient } from '@/utils/supabase/server';
 import { db } from '@onlook/db/src/client';
@@ -129,6 +130,10 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  * @see https://trpc.io/docs/procedures
  */
 export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
+    // Desktop: apply the local AI config file before any LLM-backed procedure
+    // (chat titles, suggestions, project names). No-op in the cloud.
+    loadLocalAiConfig();
+
     if (!ctx.user) {
         throw new TRPCError({ code: 'UNAUTHORIZED' });
     }

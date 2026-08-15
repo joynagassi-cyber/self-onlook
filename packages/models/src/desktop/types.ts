@@ -70,6 +70,28 @@ export interface FsDeleteRequest {
 }
 
 /**
+ * AI provider configuration persisted to the local desktop config file
+ * (written by the "AI & Models" settings tab through the desktop bridge).
+ *
+ * Mirrors the `CUSTOM_AI_*` environment variables so the web server can
+ * consume either source. `baseURL` may be empty when the default provider
+ * (OpenRouter) is used.
+ */
+export interface AiConfig {
+    /** Custom endpoint base URL (any OpenAI/Anthropic-compatible provider). */
+    baseURL?: string;
+    /** API key for the custom endpoint. Optional for local endpoints (Ollama…). */
+    apiKey?: string;
+    /** Model name sent verbatim to the provider (e.g. `deepseek-chat`, `llama3`). */
+    modelName?: string;
+    /** True when a config file exists on disk (has been saved at least once). */
+    exists?: boolean;
+}
+
+/** Values accepted when persisting the AI configuration (no `exists` flag). */
+export type AiConfigInput = Omit<AiConfig, 'exists'>;
+
+/**
  * Result envelope returned by every desktop IPC method. The main process
  * never lets an exception cross the IPC boundary: errors are returned as
  * `{ ok: false, error }` instead.
@@ -111,4 +133,13 @@ export interface OnlookDesktopApi {
     projectsDelete(projectId: string): Promise<FsResult<boolean>>;
     projectsAddTag(projectId: string, tag: string): Promise<FsResult<ProjectTagResult>>;
     projectsRemoveTag(projectId: string, tag: string): Promise<FsResult<ProjectTagResult>>;
+
+    /**
+     * AI provider configuration persisted to the local config file
+     * (`~/.onlook/ai-config.json`). Read returns `{ exists: false }` when the
+     * file has never been written.
+     */
+    aiConfigGet(): Promise<FsResult<AiConfig>>;
+    aiConfigSet(config: AiConfigInput): Promise<FsResult<AiConfig>>;
+    aiConfigPath(): Promise<FsResult<string>>;
 }

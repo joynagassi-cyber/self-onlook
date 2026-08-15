@@ -11,6 +11,8 @@
  */
 export {
     IPC,
+    type AiConfig,
+    type AiConfigInput,
     type AppInfo,
     type CreateLocalProjectInput,
     type CreateProjectInput,

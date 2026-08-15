@@ -1,3 +1,4 @@
+import { loadLocalAiConfig } from '@/server/ai-config';
 import { api } from '@/trpc/server';
 import { trackEvent } from '@/utils/analytics/server';
 import { createRootAgentStream } from '@onlook/ai';
@@ -52,6 +53,9 @@ export async function POST(req: NextRequest) {
 }
 
 export const streamResponse = async (req: NextRequest, userId: string) => {
+    // Desktop: apply the local AI config file (provider/model set in Settings)
+    // before the model client is created. No-op in the cloud.
+    loadLocalAiConfig();
     const body = await req.json();
     const { messages, chatType, conversationId, projectId } = body as {
         messages: ChatMessage[],

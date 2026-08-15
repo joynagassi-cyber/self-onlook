@@ -6,6 +6,7 @@ import { cn } from '@onlook/ui/utils';
 import { capitalizeFirstLetter } from '@onlook/utility';
 import { observer } from 'mobx-react-lite';
 import { AnimatePresence, motion } from 'motion/react';
+import { AiSettingsTab } from './ai-tab';
 import { SettingsTabValue, type SettingTab } from './helpers';
 import { PreferencesTab } from './preferences-tab';
 import { SubscriptionTab } from './subscription-tab';
@@ -23,6 +24,11 @@ export const NonProjectSettingsModal = observer(() => {
             label: SettingsTabValue.SUBSCRIPTION,
             icon: <Icons.CreditCard className="mr-2 h-4 w-4" />,
             component: <SubscriptionTab />,
+        },
+        {
+            label: SettingsTabValue.AI,
+            icon: <Icons.MagicWand className="mr-2 h-4 w-4" />,
+            component: <AiSettingsTab />,
         },
     ]
 

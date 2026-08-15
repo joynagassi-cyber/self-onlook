@@ -7,8 +7,13 @@
  */
 import { spawn } from 'node:child_process';
 import http from 'node:http';
+import os from 'node:os';
+import path from 'node:path';
 
 const DEV_URL = process.env.ONLOOK_DEV_URL ?? 'http://127.0.0.1:3000';
+
+/** Same location as `electron/config.ts` so dev and packaged runs agree. */
+const AI_CONFIG_FILE = path.join(os.homedir(), '.onlook', 'ai-config.json');
 
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -39,7 +44,10 @@ function shutdown(code) {
     process.exit(code);
 }
 
-const web = spawn('bun', ['--filter', '@onlook/web-client', 'dev'], { stdio: 'inherit' });
+const web = spawn('bun', ['--filter', '@onlook/web-client', 'dev'], {
+    stdio: 'inherit',
+    env: { ...process.env, CUSTOM_AI_CONFIG_FILE: AI_CONFIG_FILE },
+});
 
 process.on('SIGINT', () => shutdown(130));
 process.on('SIGTERM', () => shutdown(143));

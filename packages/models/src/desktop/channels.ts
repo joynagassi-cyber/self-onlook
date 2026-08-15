@@ -22,4 +22,7 @@ export const IPC = {
     projectsDelete: 'projects:delete',
     projectsAddTag: 'projects:add-tag',
     projectsRemoveTag: 'projects:remove-tag',
+    aiConfigGet: 'ai-config:get',
+    aiConfigSet: 'ai-config:set',
+    aiConfigPath: 'ai-config:path',
 } as const;

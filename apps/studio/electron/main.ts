@@ -7,7 +7,9 @@ import { app, BrowserWindow, dialog, ipcMain, shell, type OpenDialogOptions } fr
 
 import { NodeFsProvider } from '@onlook/code-provider/providers/nodefs';
 
+import { readAiConfig, resolveAiConfigPath, writeAiConfig } from './config';
 import type {
+    AiConfigInput,
     AppInfo,
     CreateLocalProjectInput,
     CreateProjectInput,
@@ -127,6 +129,9 @@ async function startStandaloneServer(): Promise<string> {
             HOSTNAME: '127.0.0.1',
             PORT: String(port),
             SKIP_ENV_VALIDATION: '1',
+            // Lets the embedded web server pick up the local AI configuration
+            // (provider/base URL/model) written by the settings UI.
+            CUSTOM_AI_CONFIG_FILE: resolveAiConfigPath(),
         },
         stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -324,6 +329,14 @@ function registerIpc(): void {
     ipcMain.handle(IPC.projectsRemoveTag, (_event, projectId: string, tag: string) =>
         safe(async () => requireProjectRepository().removeTag(LOCAL_USER_ID, projectId, tag)),
     );
+
+    ipcMain.handle(IPC.aiConfigGet, () => safe(async () => readAiConfig()));
+
+    ipcMain.handle(IPC.aiConfigSet, (_event, input: AiConfigInput) =>
+        safe(async () => writeAiConfig(input ?? {})),
+    );
+
+    ipcMain.handle(IPC.aiConfigPath, () => safe(async () => resolveAiConfigPath()));
 }
 
 function requireFsProvider(): NodeFsProvider {
